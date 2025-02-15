@@ -1,7 +1,6 @@
 import https from "https";
 import { config } from "dotenv";
 
-import corsConfig from "./config/cors.js";
 import { ratelimit } from "./config/ratelimit.js";
 
 import {
@@ -28,8 +27,20 @@ const ANIWATCH_API_HOSTNAME = process.env?.ANIWATCH_API_HOSTNAME;
 const app = new Hono<{ Variables: AniwatchAPIVariables }>();
 
 app.use(logger());
-app.use(corsConfig);
 app.use(cacheControlMiddleware);
+
+// ✅ Manually Add CORS Headers
+app.use("*", async (c, next) => {
+  c.header("Access-Control-Allow-Origin", "*");
+  c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  c.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (c.req.method === "OPTIONS") {
+    return c.text("OK", 200);
+  }
+
+  await next();
+});
 
 // CAUTION: For personal deployments, "refrain" from having an env
 // named "ANIWATCH_API_HOSTNAME". You may face rate limitting
